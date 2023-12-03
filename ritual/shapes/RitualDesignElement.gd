@@ -2,7 +2,6 @@ extends Node2D
 class_name RitualDesignElement
 # Naive design element, assumes that the only distance we care about is the center of the square
 
-const MOUSE_RADIUS_BLEED:float = MouseHandle.HANDLE_RADIUS * 3
 const INVALID_HANDLE:Vector2 = Vector2(9999999, 9999999)
 const DRAG_SNAP:Vector2 = Vector2(25, 25)
 

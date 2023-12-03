@@ -16,7 +16,7 @@ func _ready():
 
 func refresh_radius():
 	if collisionShape != null:
-		collisionShape.shape.radius = radius + RitualDesignElement.MOUSE_RADIUS_BLEED
+		collisionShape.shape.radius = radius + MouseHandle.HANDLE_RADIUS_BLEED
 		queue_redraw()
 		#print("Queued redraw for my owner: ", owner)
 	else:

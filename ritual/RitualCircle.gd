@@ -3,7 +3,7 @@ extends HollowCircleDesignElement
 func _ready():
 	var mouseRadius = CollisionShape2D.new()
 	mouseRadius.shape = CircleShape2D.new()
-	mouseRadius.shape.radius = radius + HollowCircleDesignElement.MOUSE_RADIUS_BLEED
+	mouseRadius.shape.radius = radius + MouseHandle.HANDLE_RADIUS_BLEED
 	find_child("DesignElementMouseHandler").add_child(mouseRadius)
 	mouseRadius.name = "CollisionShape2D"
 	# Have to have a collision shape before calling superclass, it expects collision shape to already exist!

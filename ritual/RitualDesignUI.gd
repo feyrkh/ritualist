@@ -83,12 +83,14 @@ func _update_mouse_handle_visibility():
 				best_dist = cur_dist
 		if best_item != null:
 			var actual_dist = best_item.get_distance(mouse_world_pos)
-			if actual_dist < RitualDesignElement.MOUSE_RADIUS_BLEED:
+			if actual_dist < MouseHandle.HANDLE_RADIUS_BLEED:
 				# we're close enough to the mouse handle to render something
 				if actual_dist < MouseHandle.HANDLE_RADIUS:
 					# we're actually overlapping the mouse handle
 					clickableInteractiveComponent = best_item
-				mouseHandle.is_clickable(clickableInteractiveComponent)
+				else:
+					clickableInteractiveComponent = null
+				mouseHandle.is_clickable(clickableInteractiveComponent, actual_dist)
 				mouseHandle.global_position = best_item.get_mouse_handle_point(mouse_world_pos)
 				mouseHandle.visible = true
 			else:
