@@ -1,6 +1,12 @@
 extends Node2D
 
 enum DragMode {MOVE, RESIZE}
+enum CursorMode {
+	NORMAL, # Moving mouse freely, cursor shows ghosts of what is selectable
+	DRAGGING, # In the middle of a drag operation
+	PLACING, # In the middle of placing a design element (like a ritual circle)
+	CONNECTING, # In the middle of connecting one design element to another
+}
 
 var mouseHandle:MouseHandle
 var currentInteractiveComponents:Array[RitualDesignElement] = []
@@ -10,7 +16,12 @@ var clickableInteractiveComponent:RitualDesignElement = null:
 			print("Clickable component changed: ", val)
 		clickableInteractiveComponent = val
 var lastMousePos:Vector2
-var drag_mode:DragMode = DragMode.MOVE
+var dragMode:DragMode = DragMode.MOVE
+var cursorMode:CursorMode = CursorMode.NORMAL:
+	set(val):
+		if val != cursorMode:
+			print("Cursor mode changed: ", val)
+			cursorMode = val
 @onready var dragModeButtons:Array[Button] = [find_child("MoveButton"), find_child("ResizeButton")]
 
 # Called when the node enters the scene tree for the first time.
@@ -24,6 +35,12 @@ func _ready():
 	RitualDesignEvents.mouse_handle_drag_start.connect(_mouse_handle_drag_start)
 	RitualDesignEvents.mouse_handle_drag_stop.connect(_mouse_handle_drag_stop)
 	RitualDesignEvents.mouse_handle_dragged.connect(_mouse_handle_dragged)
+	RitualDesignEvents.mouse_handle_unfreeze.connect(_mouse_handle_unfreeze)
+
+func _mouse_handle_unfreeze():
+	# clear the current clickable component and then check to see which one it should be again
+	clickableInteractiveComponent = null
+	_update_mouse_handle_visibility()
 
 func _mouse_handle_drag_start(global_start_pos:Vector2, dragged_element:RitualDesignElement):
 	if dragged_element:
@@ -38,13 +55,14 @@ func _mouse_handle_drag_stop(global_end_pos:Vector2, dragged_element:RitualDesig
 		dragged_element.stop_drag()
 	else:
 		print("Tried to stop drag, but no dragged element")
+	cursorMode = CursorMode.NORMAL
 
 func _mouse_handle_dragged(global_start_pos:Vector2, global_end_pos:Vector2, dragged_element:RitualDesignElement):
 	if dragged_element:
-		if drag_mode == DragMode.MOVE:
+		if dragMode == DragMode.MOVE:
 			print("Trying to move")
 			dragged_element.drag_move(global_start_pos, global_end_pos)
-		elif drag_mode == DragMode.RESIZE:
+		elif dragMode == DragMode.RESIZE:
 			print("Trying to resize")
 			dragged_element.drag_resize(global_start_pos, global_end_pos)
 	else:
@@ -62,15 +80,50 @@ func _process(delta):
 func _unhandled_key_input(event:InputEvent):
 	if event.is_action_pressed("toggle_drag_mode"):
 		_toggle_drag_mode()
-		
+
+
+func _unhandled_input(event:InputEvent):
+	if cursorMode == CursorMode.DRAGGING:
+		mouseHandle.global_position = get_global_mouse_position()
+	if event is InputEventMouseButton:
+		_check_drag_start_or_stop(event)
+		_check_select_design_element(event)
+	elif cursorMode == CursorMode.DRAGGING and event is InputEventMouseMotion:
+		RitualDesignEvents.mouse_handle_dragged.emit(mouseHandle.mousePosDragStart, mouseHandle.global_position, mouseHandle.currentHandleOwner)
+
+func _check_select_design_element(event:InputEventMouseButton):
+	if event.is_action_pressed("select_item"):
+		if mouseHandle.frozen:
+			RitualDesignEvents.mouse_handle_unfreeze.emit()
+			return
+		RitualDesignEvents.mouse_handle_freeze.emit()
+
+func _check_drag_start_or_stop(event:InputEventMouseButton):
+	if event.is_action("drag_item"):
+		if mouseHandle.frozen:
+			RitualDesignEvents.mouse_handle_unfreeze.emit()
+			return
+		if event.is_pressed():
+			if mouseHandle.currentHandleOwner:
+				cursorMode = CursorMode.DRAGGING
+				mouseHandle.mousePosDragStart = mouseHandle.global_position
+				RitualDesignEvents.mouse_handle_drag_start.emit(mouseHandle.mousePosDragStart, mouseHandle.currentHandleOwner)
+		elif event.is_released():
+			cursorMode == CursorMode.NORMAL
+			RitualDesignEvents.mouse_handle_drag_stop.emit(mouseHandle.global_position, mouseHandle.currentHandleOwner)
+		get_viewport().set_input_as_handled()
+			
+
 func _toggle_drag_mode():
-	if !mouseHandle.dragging:
+	if cursorMode != CursorMode.DRAGGING:
 		for i in range(dragModeButtons.size()):
 			if dragModeButtons[i].button_pressed:
 				dragModeButtons[(i+1) % dragModeButtons.size()].button_pressed = true
 				break
 
 func _update_mouse_handle_visibility():
+	if mouseHandle.frozen or cursorMode == CursorMode.DRAGGING:
+		return
 	var mouse_world_pos = get_global_mouse_position()
 	if mouse_world_pos != lastMousePos:
 		lastMousePos = mouse_world_pos
@@ -103,8 +156,8 @@ func _update_mouse_handle_visibility():
 
 func _on_move_button_toggled(toggled_on):
 	if toggled_on:
-		drag_mode = DragMode.MOVE
+		dragMode = DragMode.MOVE
 
 func _on_resize_button_toggled(toggled_on):
 	if toggled_on:
-		drag_mode = DragMode.RESIZE
+		dragMode = DragMode.RESIZE

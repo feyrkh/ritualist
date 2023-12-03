@@ -36,3 +36,4 @@ func drag_resize(global_start_pos:Vector2, global_end_pos:Vector2):
 	if Input.is_action_pressed("drag_item_snap"):
 		radius = snapped(radius, RESIZE_SNAP)
 	print("New radius: ", radius)
+

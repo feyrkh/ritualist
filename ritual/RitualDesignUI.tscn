@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://ritual/RitualDesignUI.gd" id="1_ty8pw"]
 [ext_resource type="Script" path="res://ZoomingCamera.gd" id="2_7l8yx"]
-[ext_resource type="PackedScene" uid="uid://bkuavt54r1gsw" path="res://ritual/RitualCircle.tscn" id="3_j43sm"]
+[ext_resource type="PackedScene" uid="uid://bkuavt54r1gsw" path="res://ritual/physical/RitualCircle.tscn" id="3_j43sm"]
 
 [sub_resource type="ButtonGroup" id="ButtonGroup_k6nkt"]
 
@@ -22,10 +22,13 @@ script = ExtResource("2_7l8yx")
 offset_right = 364.0
 offset_bottom = 58.0
 
-[node name="DragModeContainer" type="HBoxContainer" parent="UIOverlay/PanelContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="UIOverlay/PanelContainer"]
 layout_mode = 2
 
-[node name="MoveButton" type="Button" parent="UIOverlay/PanelContainer/DragModeContainer"]
+[node name="DragModeContainer" type="HBoxContainer" parent="UIOverlay/PanelContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="MoveButton" type="Button" parent="UIOverlay/PanelContainer/VBoxContainer/DragModeContainer"]
 layout_mode = 2
 focus_mode = 0
 toggle_mode = true
@@ -33,12 +36,15 @@ button_pressed = true
 button_group = SubResource("ButtonGroup_k6nkt")
 text = "Move"
 
-[node name="ResizeButton" type="Button" parent="UIOverlay/PanelContainer/DragModeContainer"]
+[node name="ResizeButton" type="Button" parent="UIOverlay/PanelContainer/VBoxContainer/DragModeContainer"]
 layout_mode = 2
 focus_mode = 0
 toggle_mode = true
 button_group = SubResource("ButtonGroup_k6nkt")
 text = "Resize"
+
+[node name="RitualElementItemMenu" type="HBoxContainer" parent="UIOverlay/PanelContainer/VBoxContainer"]
+layout_mode = 2
 
 [node name="OriginLines" type="Node2D" parent="."]
 
@@ -71,5 +77,5 @@ radius = 50.0
 [node name="RitualCircle2" parent="." instance=ExtResource("3_j43sm")]
 radius = 350.0
 
-[connection signal="toggled" from="UIOverlay/PanelContainer/DragModeContainer/MoveButton" to="." method="_on_move_button_toggled"]
-[connection signal="toggled" from="UIOverlay/PanelContainer/DragModeContainer/ResizeButton" to="." method="_on_resize_button_toggled"]
+[connection signal="toggled" from="UIOverlay/PanelContainer/VBoxContainer/DragModeContainer/MoveButton" to="." method="_on_move_button_toggled"]
+[connection signal="toggled" from="UIOverlay/PanelContainer/VBoxContainer/DragModeContainer/ResizeButton" to="." method="_on_resize_button_toggled"]

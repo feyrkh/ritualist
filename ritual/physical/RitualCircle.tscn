@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://bkuavt54r1gsw"]
 
-[ext_resource type="Script" path="res://ritual/RitualCircle.gd" id="1_awowx"]
+[ext_resource type="Script" path="res://ritual/physical/RitualCircle.gd" id="1_awowx"]
 [ext_resource type="Script" path="res://ritual/DesignElementMouseHandler.gd" id="2_tyb6h"]
 
 [node name="RitualCircle" type="Node2D"]
