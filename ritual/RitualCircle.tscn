@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3 uid="uid://bkuavt54r1gsw"]
+
+[ext_resource type="Script" path="res://ritual/RitualCircle.gd" id="1_awowx"]
+[ext_resource type="Script" path="res://ritual/DesignElementMouseHandler.gd" id="2_tyb6h"]
+
+[node name="RitualCircle" type="Node2D"]
+script = ExtResource("1_awowx")
+radius = 100.0
+
+[node name="DesignElementMouseHandler" type="Area2D" parent="."]
+script = ExtResource("2_tyb6h")
+
+[connection signal="mouse_entered" from="DesignElementMouseHandler" to="DesignElementMouseHandler" method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="DesignElementMouseHandler" to="DesignElementMouseHandler" method="_on_mouse_exited"]

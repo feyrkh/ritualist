@@ -1,0 +1,55 @@
+[gd_scene load_steps=3 format=3 uid="uid://cgxtghw0w5wif"]
+
+[ext_resource type="Script" path="res://ZoomingCamera.gd" id="1_rov8c"]
+
+[sub_resource type="Gradient" id="Gradient_3qg3a"]
+colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 0.407843)
+
+[node name="RitualDesignUI" type="Node2D"]
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(-1, 0)
+script = ExtResource("1_rov8c")
+min_zoom = null
+max_zoom = null
+zoom_factor = null
+zoom_duration = null
+
+[node name="UIOverlay" type="CanvasLayer" parent="."]
+
+[node name="PanelContainer" type="PanelContainer" parent="UIOverlay"]
+offset_right = 364.0
+offset_bottom = 58.0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="UIOverlay/PanelContainer"]
+layout_mode = 2
+
+[node name="MoveButton" type="Button" parent="UIOverlay/PanelContainer/HBoxContainer"]
+layout_mode = 2
+toggle_mode = true
+text = "Move"
+
+[node name="Node2D" type="Node2D" parent="."]
+
+[node name="Line2D" type="Line2D" parent="Node2D"]
+points = PackedVector2Array(574, 0, 0, 0)
+width = 2.0
+gradient = SubResource("Gradient_3qg3a")
+
+[node name="Line2D2" type="Line2D" parent="Node2D"]
+rotation = 1.5708
+points = PackedVector2Array(574, 0, 0, 0)
+width = 2.0
+gradient = SubResource("Gradient_3qg3a")
+
+[node name="Line2D3" type="Line2D" parent="Node2D"]
+rotation = 3.14159
+points = PackedVector2Array(574, 0, 0, 0)
+width = 2.0
+gradient = SubResource("Gradient_3qg3a")
+
+[node name="Line2D4" type="Line2D" parent="Node2D"]
+rotation = 4.71239
+points = PackedVector2Array(574, 0, 0, 0)
+width = 2.0
+gradient = SubResource("Gradient_3qg3a")
