@@ -10,6 +10,7 @@ signal mouse_handle_freeze()
 signal mouse_handle_unfreeze()
 signal item_menu_open(owningElement:RitualDesignElement)
 signal item_menu_close()
+signal create_ritual_element(element:RitualDesignElement)
 
 var mouseHandle:Node2D
 

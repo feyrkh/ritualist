@@ -29,3 +29,11 @@ func drag_move(global_start_pos:Vector2, global_end_pos:Vector2):
 	global_position = drag_start_pos + (global_end_pos - global_start_pos)
 	if Input.is_action_pressed("drag_item_snap"):
 		global_position = global_position.snapped(DRAG_SNAP)
+
+func prepare_to_place():
+	modulate.a = 0.6
+	process_mode = ProcessMode.PROCESS_MODE_DISABLED
+	
+func complete_place():
+	modulate.a = 1
+	process_mode = ProcessMode.PROCESS_MODE_INHERIT

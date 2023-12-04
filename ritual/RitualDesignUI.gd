@@ -23,6 +23,9 @@ var cursorMode:CursorMode = CursorMode.NORMAL:
 			print("Cursor mode changed: ", val)
 			cursorMode = val
 @onready var dragModeButtons:Array[Button] = [find_child("MoveButton"), find_child("ResizeButton")]
+var placingItem:RitualDesignElement
+
+@onready var RitualElements:Node2D = find_child("RitualElements")
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -36,6 +39,14 @@ func _ready():
 	RitualDesignEvents.mouse_handle_drag_stop.connect(_mouse_handle_drag_stop)
 	RitualDesignEvents.mouse_handle_dragged.connect(_mouse_handle_dragged)
 	RitualDesignEvents.mouse_handle_unfreeze.connect(_mouse_handle_unfreeze)
+	RitualDesignEvents.create_ritual_element.connect(_create_ritual_element)
+
+func _create_ritual_element(newElement:RitualDesignElement):
+	cursorMode = CursorMode.PLACING
+	placingItem = newElement
+	get_viewport().warp_mouse(get_viewport_rect().size/2)
+	placingItem.prepare_to_place()
+	RitualElements.add_child(placingItem)
 
 func _mouse_handle_unfreeze():
 	# clear the current clickable component and then check to see which one it should be again
@@ -75,28 +86,43 @@ func _remove_editable_component(component:RitualDesignElement):
 	currentInteractiveComponents.erase(component)
 
 func _process(delta):
-	_update_mouse_handle_visibility()
+	match cursorMode:
+		CursorMode.PLACING:
+			placingItem.global_position = get_global_mouse_position()
+			if Input.is_action_pressed("drag_item_snap"):
+				placingItem.global_position = placingItem.global_position.snapped(RitualDesignElement.DRAG_SNAP)
+		_:
+			_update_mouse_handle_visibility()
 
 func _unhandled_key_input(event:InputEvent):
 	if event.is_action_pressed("toggle_drag_mode"):
 		_toggle_drag_mode()
 
-
 func _unhandled_input(event:InputEvent):
 	if cursorMode == CursorMode.DRAGGING:
 		mouseHandle.global_position = get_global_mouse_position()
 	if event is InputEventMouseButton:
-		_check_drag_start_or_stop(event)
-		_check_select_design_element(event)
+		match cursorMode:
+			CursorMode.PLACING:
+				_check_placing_input(event)
+			CursorMode.CONNECTING:
+				_check_connecting_input(event)
+			CursorMode.NORMAL, CursorMode.DRAGGING:
+				_check_drag_start_or_stop(event)
 	elif cursorMode == CursorMode.DRAGGING and event is InputEventMouseMotion:
 		RitualDesignEvents.mouse_handle_dragged.emit(mouseHandle.mousePosDragStart, mouseHandle.global_position, mouseHandle.currentHandleOwner)
 
-func _check_select_design_element(event:InputEventMouseButton):
-	if event.is_action_pressed("select_item"):
-		if mouseHandle.frozen:
-			RitualDesignEvents.mouse_handle_unfreeze.emit()
-			return
-		RitualDesignEvents.mouse_handle_freeze.emit()
+func _check_placing_input(event:InputEventMouseButton):
+	if event.is_action_pressed("place_item"):
+		placingItem.complete_place()
+		placingItem = null
+		cursorMode = CursorMode.NORMAL
+	elif event.is_action_pressed("cancel_item"):
+		placingItem.queue_free()
+		cursorMode = CursorMode.NORMAL
+
+func _check_connecting_input(event:InputEventMouseButton):
+	pass
 
 func _check_drag_start_or_stop(event:InputEventMouseButton):
 	if event.is_action("drag_item"):
