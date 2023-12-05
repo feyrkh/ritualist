@@ -44,6 +44,13 @@ toggle_mode = true
 button_group = SubResource("ButtonGroup_k6nkt")
 text = "Resize"
 
+[node name="ConnectButton" type="Button" parent="UIOverlay/PanelContainer/VBoxContainer/DragModeContainer"]
+layout_mode = 2
+focus_mode = 0
+toggle_mode = true
+button_group = SubResource("ButtonGroup_k6nkt")
+text = "Connect"
+
 [node name="RitualElementItemMenu" type="HBoxContainer" parent="UIOverlay/PanelContainer/VBoxContainer"]
 layout_mode = 2
 
@@ -88,3 +95,4 @@ radius = 350.0
 
 [connection signal="toggled" from="UIOverlay/PanelContainer/VBoxContainer/DragModeContainer/MoveButton" to="." method="_on_move_button_toggled"]
 [connection signal="toggled" from="UIOverlay/PanelContainer/VBoxContainer/DragModeContainer/ResizeButton" to="." method="_on_resize_button_toggled"]
+[connection signal="toggled" from="UIOverlay/PanelContainer/VBoxContainer/DragModeContainer/ConnectButton" to="." method="_on_connect_button_toggled"]

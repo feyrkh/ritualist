@@ -1,11 +1,10 @@
 extends Node2D
 
-enum DragMode {MOVE, RESIZE}
+enum DragMode {MOVE, RESIZE, CONNECTING}
 enum CursorMode {
 	NORMAL, # Moving mouse freely, cursor shows ghosts of what is selectable
 	DRAGGING, # In the middle of a drag operation
 	PLACING, # In the middle of placing a design element (like a ritual circle)
-	CONNECTING, # In the middle of connecting one design element to another
 }
 
 var mouseHandle:MouseHandle
@@ -22,8 +21,11 @@ var cursorMode:CursorMode = CursorMode.NORMAL:
 		if val != cursorMode:
 			print("Cursor mode changed: ", val)
 			cursorMode = val
-@onready var dragModeButtons:Array[Button] = [find_child("MoveButton"), find_child("ResizeButton")]
+@onready var dragModeButtons:Array[Button] = [find_child("MoveButton"), find_child("ResizeButton"), find_child("ConnectButton")]
 var placingItem:RitualDesignElement
+var placingConnection:RitualConnection
+var connectionStartElement:RitualDesignElement
+var connectionFinishElement:RitualDesignElement
 
 @onready var RitualElements:Node2D = find_child("RitualElements")
 
@@ -55,15 +57,36 @@ func _mouse_handle_unfreeze():
 
 func _mouse_handle_drag_start(global_start_pos:Vector2, dragged_element:RitualDesignElement):
 	if dragged_element:
-		print("Starting drag")
-		dragged_element.start_drag()
+		if dragMode == DragMode.CONNECTING:
+			print("Starting connection")
+			connectionStartElement = dragged_element
+			placingConnection = preload("res://ritual/physical/RitualConnection.tscn").instantiate()
+			RitualElements.add_child(placingConnection)
+			var inputTargetPos = null
+			if Input.is_action_pressed("drag_item_snap"):
+				inputTargetPos = connectionStartElement.get_mouse_handle_point(get_global_mouse_position()) - connectionStartElement.global_position
+			print("Starting connection drag, input local pos: ", inputTargetPos)
+			placingConnection.set_input_element(connectionStartElement, inputTargetPos)
+		else:
+			print("Starting drag")
+			dragged_element.start_drag()
 	else:
 		print("Tried to start drag, but no dragged element")
 	
 func _mouse_handle_drag_stop(global_end_pos:Vector2, dragged_element:RitualDesignElement):
 	if dragged_element:
 		print("Stopping drag")
-		dragged_element.stop_drag()
+		if dragMode == DragMode.CONNECTING:
+			if placingConnection.outputElement == null || placingConnection.inputElement == null:
+				print("Deleting connection, it doesn't have two endpoints")
+				placingConnection.queue_free()
+			else:
+				print("Completing connection")
+				placingConnection.inputElement.add_output_connection(placingConnection)
+				placingConnection.outputElement.add_input_connection(placingConnection)
+		else:
+			dragged_element.stop_drag()
+		cursorMode = CursorMode.NORMAL
 	else:
 		print("Tried to stop drag, but no dragged element")
 	cursorMode = CursorMode.NORMAL
@@ -71,13 +94,30 @@ func _mouse_handle_drag_stop(global_end_pos:Vector2, dragged_element:RitualDesig
 func _mouse_handle_dragged(global_start_pos:Vector2, global_end_pos:Vector2, dragged_element:RitualDesignElement):
 	if dragged_element:
 		if dragMode == DragMode.MOVE:
-			print("Trying to move")
 			dragged_element.drag_move(global_start_pos, global_end_pos)
 		elif dragMode == DragMode.RESIZE:
-			print("Trying to resize")
 			dragged_element.drag_resize(global_start_pos, global_end_pos)
+		elif dragMode == DragMode.CONNECTING:
+			_update_connection_visual()
 	else:
-		print("Trying to drag with no dragged_element")
+		pass
+		#print("Trying to drag with no dragged_element")
+
+func _update_connection_visual():
+	var mouse_pos = get_global_mouse_position()
+	var closest_item = _find_closest_mouse_handle_point_to_pos(mouse_pos)
+	if closest_item and closest_item != connectionStartElement:
+		var actual_dist = closest_item.get_distance(mouse_pos)
+		# we're close enough to the mouse handle to render something
+		if actual_dist < MouseHandle.HANDLE_RADIUS:
+			var localPos = null
+			if Input.is_action_pressed("drag_item_snap"):
+				localPos = closest_item.get_mouse_handle_point(get_global_mouse_position()) - closest_item.global_position
+			placingConnection.set_output_element(closest_item, localPos)
+		else:
+			placingConnection.set_output_element(null, null)
+	else:
+		placingConnection.refresh_visual()
 
 func _add_editable_component(component:RitualDesignElement):
 	currentInteractiveComponents.append(component)
@@ -105,8 +145,6 @@ func _unhandled_input(event:InputEvent):
 		match cursorMode:
 			CursorMode.PLACING:
 				_check_placing_input(event)
-			CursorMode.CONNECTING:
-				_check_connecting_input(event)
 			CursorMode.NORMAL, CursorMode.DRAGGING:
 				_check_drag_start_or_stop(event)
 	elif cursorMode == CursorMode.DRAGGING and event is InputEventMouseMotion:
@@ -120,9 +158,6 @@ func _check_placing_input(event:InputEventMouseButton):
 	elif event.is_action_pressed("cancel_item"):
 		placingItem.queue_free()
 		cursorMode = CursorMode.NORMAL
-
-func _check_connecting_input(event:InputEventMouseButton):
-	pass
 
 func _check_drag_start_or_stop(event:InputEventMouseButton):
 	if event.is_action("drag_item"):
@@ -147,19 +182,23 @@ func _toggle_drag_mode():
 				dragModeButtons[(i+1) % dragModeButtons.size()].button_pressed = true
 				break
 
+func _find_closest_mouse_handle_point_to_pos(world_pos:Vector2):
+	var best_item:RitualDesignElement = null
+	var best_dist = 999999
+	for cmp in currentInteractiveComponents:
+		var cur_dist = cmp.get_distance_squared(world_pos)
+		if cur_dist < best_dist:
+			best_item = cmp
+			best_dist = cur_dist
+	return best_item
+
 func _update_mouse_handle_visibility():
 	if mouseHandle.frozen or cursorMode == CursorMode.DRAGGING:
 		return
 	var mouse_world_pos = get_global_mouse_position()
 	if mouse_world_pos != lastMousePos:
 		lastMousePos = mouse_world_pos
-		var best_item:RitualDesignElement = null
-		var best_dist = 999999
-		for cmp in currentInteractiveComponents:
-			var cur_dist = cmp.get_distance_squared(mouse_world_pos)
-			if cur_dist < best_dist:
-				best_item = cmp
-				best_dist = cur_dist
+		var best_item = _find_closest_mouse_handle_point_to_pos(mouse_world_pos)
 		if best_item != null:
 			var actual_dist = best_item.get_distance(mouse_world_pos)
 			if actual_dist < MouseHandle.HANDLE_RADIUS_BLEED:
@@ -187,3 +226,7 @@ func _on_move_button_toggled(toggled_on):
 func _on_resize_button_toggled(toggled_on):
 	if toggled_on:
 		dragMode = DragMode.RESIZE
+
+func _on_connect_button_toggled(toggled_on):
+	if toggled_on:
+		dragMode = DragMode.CONNECTING
