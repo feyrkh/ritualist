@@ -18,6 +18,11 @@ func get_distance_squared(mouse_pos:Vector2) -> float:
 func get_distance(mouse_pos:Vector2) -> float:
 	return mouse_pos.distance_to(get_mouse_handle_point(mouse_pos))
 
+func allow_drag_mode(dragMode:RitualDesignUI.DragMode):
+	match dragMode:
+		RitualDesignUI.DragMode.MOVE: return true
+		_: return false
+
 func start_drag():
 	dragStartPos = global_position
 
@@ -56,3 +61,9 @@ func refresh_connections():
 		conn.refresh_visual()
 	for conn in outputConnections:
 		conn.refresh_visual()
+
+func accept_input_connection(conn:RitualConnection):
+	return true
+
+func accept_output_connection():
+	return false

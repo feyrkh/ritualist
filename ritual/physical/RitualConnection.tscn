@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://l3ysk2uonelv"]
+[gd_scene load_steps=4 format=3 uid="uid://l3ysk2uonelv"]
 
 [ext_resource type="Script" path="res://ritual/physical/RitualConnection.gd" id="1_80v0l"]
+[ext_resource type="Script" path="res://ritual/DesignElementMouseHandler.gd" id="2_y3mv2"]
 
 [sub_resource type="Curve" id="Curve_jfi1j"]
 _data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.928571, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
@@ -13,3 +14,11 @@ script = ExtResource("1_80v0l")
 points = PackedVector2Array(0, 0, 0, 0, 0, 0)
 width = 5.0
 width_curve = SubResource("Curve_jfi1j")
+
+[node name="DesignElementMouseHandler" type="Area2D" parent="."]
+script = ExtResource("2_y3mv2")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DesignElementMouseHandler"]
+
+[connection signal="mouse_entered" from="DesignElementMouseHandler" to="DesignElementMouseHandler" method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="DesignElementMouseHandler" to="DesignElementMouseHandler" method="_on_mouse_exited"]

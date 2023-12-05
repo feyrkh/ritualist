@@ -14,6 +14,11 @@ func _ready():
 	collisionShape = self.find_child("CollisionShape2D", true, false)
 	refresh_radius()
 
+func allow_drag_mode(dragMode:RitualDesignUI.DragMode):
+	match dragMode:
+		RitualDesignUI.DragMode.MOVE, RitualDesignUI.DragMode.CONNECTING, RitualDesignUI.DragMode.RESIZE: return true
+		_: return false
+		
 func refresh_radius():
 	if collisionShape != null:
 		collisionShape.shape.radius = radius + MouseHandle.HANDLE_RADIUS_BLEED

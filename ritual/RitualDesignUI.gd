@@ -1,4 +1,5 @@
 extends Node2D
+class_name RitualDesignUI
 
 enum DragMode {MOVE, RESIZE, CONNECTING}
 enum CursorMode {
@@ -42,6 +43,7 @@ func _ready():
 	RitualDesignEvents.mouse_handle_dragged.connect(_mouse_handle_dragged)
 	RitualDesignEvents.mouse_handle_unfreeze.connect(_mouse_handle_unfreeze)
 	RitualDesignEvents.create_ritual_element.connect(_create_ritual_element)
+	RitualDesignEvents.update_ritual_connection.connect(_update_ritual_connection)
 
 func _create_ritual_element(newElement:RitualDesignElement):
 	cursorMode = CursorMode.PLACING
@@ -72,6 +74,7 @@ func _mouse_handle_drag_start(global_start_pos:Vector2, dragged_element:RitualDe
 			dragged_element.start_drag()
 	else:
 		print("Tried to start drag, but no dragged element")
+		cursorMode = CursorMode.NORMAL
 	
 func _mouse_handle_drag_stop(global_end_pos:Vector2, dragged_element:RitualDesignElement):
 	if dragged_element:
@@ -102,6 +105,10 @@ func _mouse_handle_dragged(global_start_pos:Vector2, global_end_pos:Vector2, dra
 	else:
 		pass
 		#print("Trying to drag with no dragged_element")
+
+func _update_ritual_connection(conn:RitualConnection):
+	placingConnection = conn
+	_update_connection_visual()
 
 func _update_connection_visual():
 	var mouse_pos = get_global_mouse_position()
@@ -186,6 +193,17 @@ func _find_closest_mouse_handle_point_to_pos(world_pos:Vector2):
 	var best_item:RitualDesignElement = null
 	var best_dist = 999999
 	for cmp in currentInteractiveComponents:
+		if !is_instance_valid(cmp):
+			currentInteractiveComponents.erase(cmp)
+			continue
+		if cursorMode == CursorMode.DRAGGING && dragMode == DragMode.CONNECTING:
+			if placingConnection:
+				if (placingConnection.dragging_output_end() and !cmp.accept_input_connection(placingConnection)) or (!placingConnection.dragging_output_end() and !cmp.accept_output_connection()):
+					# if we are currently looking for an output point for the connection we're
+					# dragging, then skip any elements that won't accept this connection as input, or vice versa
+					continue
+		if !cmp.allow_drag_mode(dragMode):
+			continue
 		var cur_dist = cmp.get_distance_squared(world_pos)
 		if cur_dist < best_dist:
 			best_item = cmp
