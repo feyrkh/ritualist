@@ -18,9 +18,24 @@ func refresh_radius():
 	if collisionShape != null:
 		collisionShape.shape.radius = radius + MouseHandle.HANDLE_RADIUS_BLEED
 		queue_redraw()
-		#print("Queued redraw for my owner: ", owner)
+		refresh_connections()
+		print("Queued redraw for my owner: ", owner)
 	else:
 		print("Tried to update radius, but had no collisionShape")
+
+
+func refresh_connections():
+	# adjust endpoints in case our circle changed size
+	for conn in inputConnections:
+		# we are the output of our input connections, so update their endpoint if they have one
+		if conn.outputLocalPosition:
+			conn.outputLocalPosition = conn.outputLocalPosition.normalized() * radius
+	for conn in outputConnections:
+		if conn.inputLocalPosition:
+			conn.inputLocalPosition = conn.inputLocalPosition.normalized() * radius
+	# redraw connections
+	super.refresh_connections()
+
 
 func get_mouse_handle_point(mouse_pos:Vector2) -> Vector2:
 	var normalized = (mouse_pos - global_position).normalized()
