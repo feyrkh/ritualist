@@ -192,9 +192,10 @@ func _toggle_drag_mode():
 func _find_closest_mouse_handle_point_to_pos(world_pos:Vector2):
 	var best_item:RitualDesignElement = null
 	var best_dist = 999999
+	var need_cleanup := false
 	for cmp in currentInteractiveComponents:
 		if !is_instance_valid(cmp):
-			currentInteractiveComponents.erase(cmp)
+			need_cleanup = true
 			continue
 		if cursorMode == CursorMode.DRAGGING && dragMode == DragMode.CONNECTING:
 			if placingConnection:
@@ -208,6 +209,8 @@ func _find_closest_mouse_handle_point_to_pos(world_pos:Vector2):
 		if cur_dist < best_dist:
 			best_item = cmp
 			best_dist = cur_dist
+	if need_cleanup:
+		currentInteractiveComponents = currentInteractiveComponents.filter(func(el): return el != null)
 	return best_item
 
 func _update_mouse_handle_visibility():
