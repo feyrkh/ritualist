@@ -64,12 +64,10 @@ func refresh_visual(snap_to_closest:bool = false):
 			DrawLine.points[1] = outputElement.global_position + outputLocalPosition
 			DrawLine.points[0] = inputElement.get_mouse_handle_point(DrawLine.points[1])
 		else:
-			# Find the mouse handle point on the input element based on the center of the output element
-			DrawLine.points[0] = inputElement.get_mouse_handle_point(outputElement.global_position)
-			# Find the mouse handle point on the output element based on the previously identified handle on the input point
-			DrawLine.points[1] = outputElement.get_mouse_handle_point(DrawLine.points[0])
-			# Because the two shapes may not be circular, update the originally chosen point to be closest to whatever actual point was chosen
+			DrawLine.points[1] = outputElement.get_mouse_handle_point(inputElement.global_position)
 			DrawLine.points[0] = inputElement.get_mouse_handle_point(DrawLine.points[1])
+			# Because the two shapes may not be circular, update the originally chosen point to be closest to whatever actual point was chosen
+			DrawLine.points[1] = outputElement.get_mouse_handle_point(DrawLine.points[0])
 		DrawLine.points[2] = DrawLine.points[1] + Vector2(DrawLine.points[1] - DrawLine.points[0]).normalized().rotated(10) * 20
 	elif inputElement:
 		var mouse_pos = get_global_mouse_position()
