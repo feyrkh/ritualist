@@ -144,6 +144,10 @@ func _process(delta):
 func _unhandled_key_input(event:InputEvent):
 	if event.is_action_pressed("toggle_drag_mode"):
 		_toggle_drag_mode()
+		get_viewport().set_input_as_handled()
+	if event.is_action_pressed("delete_item"):
+		_delete_selected_element()
+		get_viewport().set_input_as_handled()
 
 func _unhandled_input(event:InputEvent):
 	if cursorMode == CursorMode.DRAGGING:
@@ -189,7 +193,11 @@ func _toggle_drag_mode():
 				dragModeButtons[(i+1) % dragModeButtons.size()].button_pressed = true
 				break
 
-func _find_closest_mouse_handle_point_to_pos(world_pos:Vector2):
+func _delete_selected_element():
+	if clickableInteractiveComponent:
+		clickableInteractiveComponent.queue_free()
+
+func _find_closest_mouse_handle_point_to_pos(world_pos:Vector2) -> RitualDesignElement:
 	var best_item:RitualDesignElement = null
 	var best_dist = 999999
 	var need_cleanup := false

@@ -13,9 +13,11 @@ func _notification(event):
 	if event == NOTIFICATION_PREDELETE:
 		# Destructor - delete any connections to/from this node
 		for conn in inputConnections:
-			conn.queue_free()
+			if conn != null and is_instance_valid(conn):
+				conn.queue_free()
 		for conn in outputConnections:
-			conn.queue_free()
+			if conn != null and is_instance_valid(conn):
+				conn.queue_free()
 
 func get_mouse_handle_point(mouse_pos:Vector2) -> Vector2:
 	return global_position

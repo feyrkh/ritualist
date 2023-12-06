@@ -21,9 +21,9 @@ func _ready():
 func _notification(event):
 	if event == NOTIFICATION_PREDELETE:
 		# Destructor - remove me from any connected elements
-		if inputElement:
+		if inputElement and is_instance_valid(inputElement):
 			inputElement.remove_connection(self)
-		if outputElement:
+		if outputElement and is_instance_valid(outputElement):
 			outputElement.remove_connection(self)
 		
 func allow_drag_mode(dragMode:RitualDesignUI.DragMode):
