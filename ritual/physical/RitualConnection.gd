@@ -18,6 +18,14 @@ func _ready():
 	mouseDetectShape.points = PackedVector2Array([Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO])
 	CollisionShape.shape = mouseDetectShape
 
+func _notification(event):
+	if event == NOTIFICATION_PREDELETE:
+		# Destructor - remove me from any connected elements
+		if inputElement:
+			inputElement.remove_connection(self)
+		if outputElement:
+			outputElement.remove_connection(self)
+		
 func allow_drag_mode(dragMode:RitualDesignUI.DragMode):
 	match dragMode:
 		RitualDesignUI.DragMode.MOVE: return true

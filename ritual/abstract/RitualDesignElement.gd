@@ -9,6 +9,14 @@ var dragStartPos:Vector2
 var inputConnections:Array[RitualConnection]
 var outputConnections:Array[RitualConnection]
 
+func _notification(event):
+	if event == NOTIFICATION_PREDELETE:
+		# Destructor - delete any connections to/from this node
+		for conn in inputConnections:
+			conn.queue_free()
+		for conn in outputConnections:
+			conn.queue_free()
+
 func get_mouse_handle_point(mouse_pos:Vector2) -> Vector2:
 	return global_position
 
@@ -63,6 +71,9 @@ func refresh_connections():
 		conn.refresh_visual()
 
 func accept_input_connection(conn:RitualConnection):
+	if conn.inputElement == self:
+		# no connection from myself to myself 
+		return false
 	return true
 
 func accept_output_connection():
