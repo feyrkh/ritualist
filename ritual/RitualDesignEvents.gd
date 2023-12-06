@@ -12,6 +12,7 @@ signal item_menu_open(owningElement:RitualDesignElement)
 signal item_menu_close()
 signal create_ritual_element(element:RitualDesignElement)
 signal update_ritual_connection(element:RitualConnection)
+signal update_ritual_connection_endpoint(element:RitualConnectionEndpoint)
 
 var mouseHandle:Node2D
 

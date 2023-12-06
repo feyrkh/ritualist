@@ -25,8 +25,9 @@ var cursorMode:CursorMode = CursorMode.NORMAL:
 @onready var dragModeButtons:Array[Button] = [find_child("MoveButton"), find_child("ResizeButton"), find_child("ConnectButton")]
 var placingItem:RitualDesignElement
 var placingConnection:RitualConnection
+var placingEndpoint:RitualConnectionEndpoint
+var draggingConnectionStart:bool = false
 var connectionStartElement:RitualDesignElement
-var connectionFinishElement:RitualDesignElement
 
 @onready var RitualElements:Node2D = find_child("RitualElements")
 
@@ -44,6 +45,7 @@ func _ready():
 	RitualDesignEvents.mouse_handle_unfreeze.connect(_mouse_handle_unfreeze)
 	RitualDesignEvents.create_ritual_element.connect(_create_ritual_element)
 	RitualDesignEvents.update_ritual_connection.connect(_update_ritual_connection)
+	RitualDesignEvents.update_ritual_connection_endpoint.connect(_update_ritual_connection_endpoint)
 
 func _create_ritual_element(newElement:RitualDesignElement):
 	cursorMode = CursorMode.PLACING
@@ -60,15 +62,25 @@ func _mouse_handle_unfreeze():
 func _mouse_handle_drag_start(global_start_pos:Vector2, dragged_element:RitualDesignElement):
 	if dragged_element:
 		if dragMode == DragMode.CONNECTING:
-			print("Starting connection")
-			connectionStartElement = dragged_element
-			placingConnection = preload("res://ritual/physical/RitualConnection.tscn").instantiate()
-			RitualElements.add_child(placingConnection)
-			var inputTargetPos = null
-			if Input.is_action_pressed("drag_item_snap"):
-				inputTargetPos = connectionStartElement.get_mouse_handle_point(get_global_mouse_position()) - connectionStartElement.global_position
-			print("Starting connection drag, input local pos: ", inputTargetPos)
-			placingConnection.set_input_element(connectionStartElement, inputTargetPos)
+			if dragged_element is RitualConnection or dragged_element is RitualConnectionEndpoint:
+				print("Moving connection endpoint")
+				dragged_element.start_drag()
+			else:
+				print("Starting connection")
+				draggingConnectionStart = false
+				connectionStartElement = dragged_element
+				placingConnection = preload("res://ritual/physical/RitualConnection.tscn").instantiate()
+				RitualElements.add_child(placingConnection)
+				var inputTargetPos = null
+				if Input.is_action_pressed("drag_item_snap"):
+					inputTargetPos = connectionStartElement.get_mouse_handle_point(get_global_mouse_position()) - connectionStartElement.global_position
+				print("Starting connection drag, input local pos: ", inputTargetPos)
+				placingConnection.set_input_element(connectionStartElement, inputTargetPos)
+				placingEndpoint = preload("res://ritual/physical/RitualConnectionEndpoint.tscn").instantiate()
+				RitualElements.add_child(placingEndpoint)
+				placingEndpoint.setup(placingConnection)
+				draggingConnectionStart = false
+				dragged_element = placingEndpoint
 		else:
 			print("Starting drag")
 			dragged_element.start_drag()
@@ -79,7 +91,7 @@ func _mouse_handle_drag_start(global_start_pos:Vector2, dragged_element:RitualDe
 func _mouse_handle_drag_stop(global_end_pos:Vector2, dragged_element:RitualDesignElement):
 	if dragged_element:
 		print("Stopping drag")
-		if dragMode == DragMode.CONNECTING:
+		if dragMode == DragMode.CONNECTING and placingConnection:
 			if placingConnection.outputElement == null || placingConnection.inputElement == null:
 				print("Deleting connection, it doesn't have two endpoints")
 				placingConnection.queue_free()
@@ -93,13 +105,24 @@ func _mouse_handle_drag_stop(global_end_pos:Vector2, dragged_element:RitualDesig
 	else:
 		print("Tried to stop drag, but no dragged element")
 	cursorMode = CursorMode.NORMAL
+	placingConnection = null
 
 func _mouse_handle_dragged(global_start_pos:Vector2, global_end_pos:Vector2, dragged_element:RitualDesignElement):
 	if dragged_element:
-		if dragMode == DragMode.MOVE:
+		if dragMode == DragMode.MOVE or (dragMode == DragMode.CONNECTING and (dragged_element is RitualConnection or dragged_element is RitualConnectionEndpoint)):
+			if dragged_element is RitualConnection:
+				placingConnection = dragged_element
+				draggingConnectionStart = true
+			elif dragged_element is RitualConnectionEndpoint:
+				placingConnection = dragged_element.connectionOwner
+				draggingConnectionStart = false
+			else:
+				placingConnection = null
 			dragged_element.drag_move(global_start_pos, global_end_pos)
+			_update_connection_visual()
 		elif dragMode == DragMode.RESIZE:
 			dragged_element.drag_resize(global_start_pos, global_end_pos)
+			placingConnection = null
 		elif dragMode == DragMode.CONNECTING:
 			_update_connection_visual()
 	else:
@@ -110,7 +133,13 @@ func _update_ritual_connection(conn:RitualConnection):
 	placingConnection = conn
 	_update_connection_visual()
 
+func _update_ritual_connection_endpoint(conn:RitualConnectionEndpoint):
+	placingConnection = conn.connectionOwner
+	_update_connection_visual()
+
 func _update_connection_visual():
+	if !placingConnection:
+		return
 	var mouse_pos = get_global_mouse_position()
 	var closest_item = _find_closest_mouse_handle_point_to_pos(mouse_pos)
 	if closest_item and closest_item != connectionStartElement:
@@ -120,9 +149,15 @@ func _update_connection_visual():
 			var localPos = null
 			if Input.is_action_pressed("drag_item_snap"):
 				localPos = closest_item.get_mouse_handle_point(get_global_mouse_position()) - closest_item.global_position
-			placingConnection.set_output_element(closest_item, localPos)
+			if draggingConnectionStart:
+				placingConnection.set_input_element(closest_item, localPos)
+			else:
+				placingConnection.set_output_element(closest_item, localPos)
 		else:
-			placingConnection.set_output_element(null, null)
+			if draggingConnectionStart:
+				placingConnection.set_input_element(null, null)
+			else:
+				placingConnection.set_output_element(null, null)
 	else:
 		placingConnection.refresh_visual()
 
@@ -194,7 +229,7 @@ func _toggle_drag_mode():
 				break
 
 func _delete_selected_element():
-	if clickableInteractiveComponent:
+	if clickableInteractiveComponent and is_instance_valid(clickableInteractiveComponent):
 		clickableInteractiveComponent.queue_free()
 
 func _find_closest_mouse_handle_point_to_pos(world_pos:Vector2) -> RitualDesignElement:
@@ -205,12 +240,14 @@ func _find_closest_mouse_handle_point_to_pos(world_pos:Vector2) -> RitualDesignE
 		if !is_instance_valid(cmp):
 			need_cleanup = true
 			continue
-		if cursorMode == CursorMode.DRAGGING && dragMode == DragMode.CONNECTING:
-			if placingConnection:
-				if (placingConnection.dragging_output_end() and !cmp.accept_input_connection(placingConnection)) or (!placingConnection.dragging_output_end() and !cmp.accept_output_connection()):
-					# if we are currently looking for an output point for the connection we're
-					# dragging, then skip any elements that won't accept this connection as input, or vice versa
-					continue
+		if placingConnection:
+			if cmp is RitualConnection or cmp is RitualConnectionEndpoint:
+				continue
+			if (!draggingConnectionStart and !cmp.accept_input_connection(placingConnection)) or (draggingConnectionStart and !cmp.accept_output_connection()):
+				# if we are currently looking for an output point for the connection endpoint,
+				# we're dragging or for an input point for the connection we're dragging
+				# then skip any elements that won't accept this connection as input, or vice versa
+				continue
 		if !cmp.allow_drag_mode(dragMode):
 			continue
 		var cur_dist = cmp.get_distance_squared(world_pos)

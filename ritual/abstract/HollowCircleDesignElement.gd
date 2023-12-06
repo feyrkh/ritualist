@@ -57,3 +57,5 @@ func drag_resize(global_start_pos:Vector2, global_end_pos:Vector2):
 		radius = snapped(radius, RESIZE_SNAP)
 	print("New radius: ", radius)
 
+func accept_output_connection():
+	return true

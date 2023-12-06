@@ -1,0 +1,19 @@
+[gd_scene load_steps=4 format=3 uid="uid://d23ud7inh72si"]
+
+[ext_resource type="Script" path="res://ritual/physical/RitualConnectionEndpoint.gd" id="1_fhpf6"]
+[ext_resource type="Script" path="res://ritual/DesignElementMouseHandler.gd" id="2_yv46a"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ijnvf"]
+radius = 30.0
+
+[node name="RitualConnectionEndpoint" type="Node2D"]
+script = ExtResource("1_fhpf6")
+
+[node name="DesignElementMouseHandler" type="Area2D" parent="."]
+script = ExtResource("2_yv46a")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DesignElementMouseHandler"]
+shape = SubResource("CircleShape2D_ijnvf")
+
+[connection signal="mouse_entered" from="DesignElementMouseHandler" to="DesignElementMouseHandler" method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="DesignElementMouseHandler" to="DesignElementMouseHandler" method="_on_mouse_exited"]
